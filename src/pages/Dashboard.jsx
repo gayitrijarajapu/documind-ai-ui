@@ -3,10 +3,12 @@ import { ArrowRight, Search } from 'lucide-react'
 import DocumentList from '../components/DocumentList'
 import FileUpload from '../components/FileUpload'
 
-function Dashboard({ documents, activeDocument, onUpload, onOpenDocument }) {
-  const indexedCount = documents.filter((document) => document.status === 'Indexed').length
-  const processingCount = documents.filter((document) => document.status === 'Processing').length
-  const totalPages = documents.reduce((total, document) => total + (document.pages ?? 0), 0)
+function Dashboard({ documents, activeDocument, loading, onUpload, onOpenDocument, stats }) {
+  const indexedCount = stats?.indexed ?? documents.filter((document) => document.status === 'Indexed').length
+  const processingCount =
+    stats?.processing ?? documents.filter((document) => document.status === 'Processing').length
+  const documentCount = stats?.documents ?? documents.length
+  const answerCount = stats?.aiAnswers ?? 0
 
   return (
     <div className="flex-1 bg-white p-4 md:p-5">
@@ -15,7 +17,7 @@ function Dashboard({ documents, activeDocument, onUpload, onOpenDocument }) {
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-950">
               <span className="h-2 w-2 rounded-full bg-black" />
-              Active documents: {documents.length}
+              Documents: {documentCount}
             </div>
             <p className="text-sm font-semibold text-neutral-500">DocuMind workspace</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 md:text-3xl">
@@ -37,10 +39,11 @@ function Dashboard({ documents, activeDocument, onUpload, onOpenDocument }) {
 
         <div className="mb-4 grid gap-4 lg:grid-cols-[1fr_320px]">
           <MetricsPanel
-            documents={documents}
+            documentCount={documentCount}
             indexedCount={indexedCount}
+            loading={loading}
             processingCount={processingCount}
-            totalPages={totalPages}
+            answerCount={answerCount}
           />
           <FileUpload onUpload={onUpload} />
         </div>
@@ -56,6 +59,7 @@ function Dashboard({ documents, activeDocument, onUpload, onOpenDocument }) {
           <DocumentList
             documents={documents.slice(0, 3)}
             activeDocumentId={activeDocument?.id}
+            loading={loading}
             onOpenDocument={onOpenDocument}
           />
         </div>
@@ -93,22 +97,24 @@ function Dashboard({ documents, activeDocument, onUpload, onOpenDocument }) {
   )
 }
 
-function MetricsPanel({ documents, indexedCount, processingCount, totalPages }) {
+function MetricsPanel({ answerCount, documentCount, indexedCount, loading, processingCount }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
       <div className="grid md:grid-cols-4">
         {[
-          ['Number of documents', documents.length],
+          ['Number of documents', documentCount],
           ['Indexed documents', indexedCount],
           ['Processing', processingCount],
-          ['Total pages', totalPages || '--'],
+          ['AI answers', answerCount],
         ].map(([label, value], index) => (
           <div
             className={`p-4 ${index === 0 ? 'border-b-2 border-black' : 'border-l border-neutral-100'}`}
             key={label}
           >
             <p className="text-sm font-semibold text-neutral-500">{label}</p>
-            <p className="mt-2 text-xl font-semibold text-neutral-950">{value}</p>
+            <p className="mt-2 text-xl font-semibold text-neutral-950">
+              {loading ? '...' : value}
+            </p>
           </div>
         ))}
       </div>

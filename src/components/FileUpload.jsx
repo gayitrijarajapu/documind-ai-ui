@@ -21,7 +21,12 @@ function FileUpload({ onUpload }) {
         if (current >= 100) {
           clearInterval(timer)
           Promise.resolve(onUpload(file))
-            .catch(() => setError('Upload failed. Check that the backend is running.'))
+            .catch((uploadError) =>
+              setError(
+                uploadError?.response?.data?.detail ??
+                  'Upload failed. Check that the backend is running.',
+              ),
+            )
             .finally(() => setTimeout(() => setProgress(0), 700))
           return 100
         }

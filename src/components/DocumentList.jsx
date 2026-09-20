@@ -2,15 +2,15 @@ import { Eye, FileText, MoreHorizontal, Trash2 } from 'lucide-react'
 
 function StatusBadge({ status }) {
   const styles = {
-    Indexed: 'bg-white text-neutral-950 ring-neutral-300',
-    Processing: 'bg-neutral-100 text-neutral-950 ring-neutral-300',
-    'Needs review': 'bg-neutral-200 text-neutral-950 ring-neutral-300',
+    Indexed: 'bg-white text-neutral-950',
+    Processing: 'bg-neutral-50 text-neutral-950',
+    'Needs review': 'bg-neutral-100 text-neutral-950',
   }
 
   return (
     <span
-      className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${
-        styles[status] ?? 'bg-neutral-100 text-neutral-600 ring-neutral-200'
+      className={`inline-flex w-fit items-center rounded-xl border border-neutral-200 px-2.5 py-1 text-xs font-semibold ${
+        styles[status] ?? 'bg-white text-neutral-600'
       }`}
     >
       {status}
@@ -18,10 +18,18 @@ function StatusBadge({ status }) {
   )
 }
 
-function DocumentList({ documents, activeDocumentId, onOpenDocument, onDeleteDocument }) {
+function DocumentList({ documents, activeDocumentId, loading, onOpenDocument, onDeleteDocument }) {
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-neutral-500">
+        Loading documents...
+      </div>
+    )
+  }
+
   if (!documents.length) {
     return (
-      <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center text-neutral-500">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-neutral-500">
         No documents yet. Upload a PDF to begin.
       </div>
     )
@@ -66,7 +74,11 @@ function DocumentList({ documents, activeDocumentId, onOpenDocument, onDeleteDoc
             </button>
             <button
               className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"
-              onClick={() => onDeleteDocument?.(document.id)}
+              onClick={() => {
+                if (window.confirm(`Delete ${document.fileName}?`)) {
+                  onDeleteDocument?.(document.id)
+                }
+              }}
               title="Delete document"
               type="button"
             >

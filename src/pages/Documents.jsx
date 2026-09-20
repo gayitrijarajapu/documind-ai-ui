@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import DocumentList from '../components/DocumentList'
 
-function Documents({ documents, activeDocumentId, onOpenDocument, onDeleteDocument }) {
+function Documents({ documents, activeDocumentId, loading, onOpenDocument, onDeleteDocument }) {
   const [query, setQuery] = useState('')
   const filteredDocuments = useMemo(
     () =>
@@ -36,6 +36,7 @@ function Documents({ documents, activeDocumentId, onOpenDocument, onDeleteDocume
       <DocumentList
         documents={filteredDocuments}
         activeDocumentId={activeDocumentId}
+        loading={loading}
         onDeleteDocument={onDeleteDocument}
         onOpenDocument={onOpenDocument}
       />

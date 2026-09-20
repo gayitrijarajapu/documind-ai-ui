@@ -5,65 +5,77 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import DocumentChat from './pages/DocumentChat'
 import Documents from './pages/Documents'
-import { mockDocuments } from './data/mockData'
-import { deleteDocument as deleteDocumentApi, fetchDocuments, uploadDocument } from './services/api'
+import {
+  deleteDocument as deleteDocumentApi,
+  fetchDashboardStats,
+  fetchDocument,
+  fetchDocuments,
+  uploadDocument,
+} from './services/api'
 
 function App() {
   const [documents, setDocuments] = useState([])
   const [activeDocumentId, setActiveDocumentId] = useState()
   const [apiStatus, setApiStatus] = useState('checking')
+  const [dashboardStats, setDashboardStats] = useState()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const activeDocument = useMemo(
     () => documents.find((document) => document.id === activeDocumentId) ?? documents[0],
     [activeDocumentId, documents],
   )
 
+  const refreshDashboard = async () => {
+    const [documentData, statsData] = await Promise.all([fetchDocuments(), fetchDashboardStats()])
+    setDocuments(documentData)
+    setDashboardStats(statsData)
+    setActiveDocumentId((current) => current ?? documentData[0]?.id)
+    setApiStatus('connected')
+    return documentData
+  }
+
   useEffect(() => {
-    fetchDocuments()
-      .then((data) => {
-        setDocuments(data)
-        setActiveDocumentId((current) => current ?? data[0]?.id)
-        setApiStatus('connected')
-      })
+    setLoading(true)
+    refreshDashboard()
       .catch(() => {
-        setDocuments(mockDocuments)
-        setActiveDocumentId((current) => current ?? mockDocuments[0]?.id)
-        setApiStatus('demo')
+        setApiStatus('error')
+        setError('Could not connect to FastAPI at http://127.0.0.1:8000.')
       })
+      .finally(() => setLoading(false))
   }, [])
 
-  const addDocument = async (file) => {
-    let document
-    if (apiStatus === 'connected') {
-      document = await uploadDocument(file)
-    } else {
-      document = {
-        id: crypto.randomUUID(),
-        title: file.name.replace(/\.pdf$/i, ''),
-        fileName: file.name,
-        uploadedAt: 'Just now',
-        status: 'Processing',
-        size: `${Math.max(file.size / 1024 / 1024, 0.1).toFixed(1)} MB`,
-        pages: Math.max(8, Math.round(file.size / 75000)),
-        category: 'Uploaded',
-        summary:
-          'Demo upload added locally. Connect FastAPI to process this document for real page references, summaries, and document details.',
-        keyPoints: ['Upload received', 'Processing pending', 'Backend connection required'],
-        fields: { Type: 'PDF', Status: 'Demo only', Confidence: 'Pending' },
-      }
+  const openDocument = async (id) => {
+    setActiveDocumentId(id)
+    try {
+      const document = await fetchDocument(id)
+      setDocuments((current) => current.map((item) => (item.id === id ? document : item)))
+    } catch {
+      setError('Could not load this document. Please try again.')
     }
+  }
+
+  const addDocument = async (file) => {
+    setError('')
+    const document = await uploadDocument(file)
     setDocuments((current) => [document, ...current])
     setActiveDocumentId(document.id)
+    await refreshDashboard()
   }
 
   const deleteDocument = async (id) => {
-    if (apiStatus === 'connected') {
-      await deleteDocumentApi(id)
-    }
-    setDocuments((current) => current.filter((document) => document.id !== id))
+    setError('')
+    await deleteDocumentApi(id)
+    const nextDocuments = await refreshDashboard()
     if (activeDocumentId === id) {
-      setActiveDocumentId(documents.find((document) => document.id !== id)?.id)
+      setActiveDocumentId(nextDocuments.find((document) => document.id !== id)?.id)
     }
+  }
+
+  const refreshActiveDocument = async () => {
+    if (!activeDocument?.id) return
+    const document = await fetchDocument(activeDocument.id)
+    setDocuments((current) => current.map((item) => (item.id === document.id ? document : item)))
   }
 
   return (
@@ -72,6 +84,11 @@ function App() {
         <Sidebar />
         <main className="flex h-screen min-w-0 flex-1 flex-col overflow-y-auto">
           <Navbar apiStatus={apiStatus} documentsCount={documents.length} />
+          {error && (
+            <div className="mx-4 mt-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-950 md:mx-5">
+              {error}
+            </div>
+          )}
           <Routes>
             <Route
               path="/"
@@ -79,8 +96,10 @@ function App() {
                 <Dashboard
                   documents={documents}
                   activeDocument={activeDocument}
+                  loading={loading}
+                  stats={dashboardStats}
                   onUpload={addDocument}
-                  onOpenDocument={setActiveDocumentId}
+                  onOpenDocument={openDocument}
                 />
               }
             />
@@ -90,14 +109,21 @@ function App() {
                 <Documents
                   documents={documents}
                   activeDocumentId={activeDocument?.id}
-                  onOpenDocument={setActiveDocumentId}
+                  loading={loading}
+                  onOpenDocument={openDocument}
                   onDeleteDocument={deleteDocument}
                 />
               }
             />
             <Route
               path="/chat"
-              element={<DocumentChat document={activeDocument} onUpload={addDocument} />}
+              element={
+                <DocumentChat
+                  document={activeDocument}
+                  onDocumentUpdated={refreshActiveDocument}
+                  onUpload={addDocument}
+                />
+              }
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

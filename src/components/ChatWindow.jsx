@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2, SendHorizontal } from 'lucide-react'
 import AppLogo from './AppLogo'
 import ChatMessage from './ChatMessage'
@@ -25,6 +25,21 @@ function ChatWindow({ document }) {
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
   const [sessionId, setSessionId] = useState()
+
+  useEffect(() => {
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content:
+          'Hello. I am ready to answer questions, summarize sections, and point to the pages from your selected document.',
+        sources: [],
+        createdAt: 'Just now',
+      },
+    ])
+    setQuestion('')
+    setSessionId()
+  }, [document.id])
 
   const sendMessage = async () => {
     if (!question.trim() || loading) return
@@ -59,7 +74,7 @@ function ChatWindow({ document }) {
         {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'I could not reach the backend for this question. Please check the API server.',
+          content: 'I could not answer that question. Please check the API server and try again.',
           sources: [],
           createdAt: 'Now',
         },

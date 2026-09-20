@@ -15,7 +15,23 @@ summaries, and reading extracted document details.
 
 ## Getting Started
 
+Create the frontend env file:
+
 ```bash
+cp .env.example .env
+```
+
+Start the FastAPI backend in a separate terminal:
+
+```bash
+cd /Users/sasitamda/Desktop/documind-ai-api
+.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Start the React frontend:
+
+```bash
+cd /Users/sasitamda/Desktop/documind-ai-ui
 npm install
 npm run dev
 ```
@@ -23,14 +39,16 @@ npm run dev
 The app expects the FastAPI backend at:
 
 ```bash
-http://localhost:8000
+http://127.0.0.1:8000
 ```
 
 You can override this with:
 
 ```bash
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://127.0.0.1:8000
 ```
+
+If Vite starts on `http://localhost:5174`, the backend already allows that origin.
 
 ## Scripts
 
