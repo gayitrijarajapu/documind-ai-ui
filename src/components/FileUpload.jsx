@@ -3,10 +3,14 @@ import { FileUp, UploadCloud } from 'lucide-react'
 
 function FileUpload({ onUpload }) {
   const inputRef = useRef(null)
+  const uploadingRef = useRef(false)
   const [error, setError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
 
   const handleFiles = (files) => {
+    if (uploadingRef.current) return
+
     const file = files?.[0]
     if (!file) return
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
@@ -15,24 +19,43 @@ function FileUpload({ onUpload }) {
     }
 
     setError('')
+    setIsUploading(true)
+    uploadingRef.current = true
     setProgress(18)
     const timer = setInterval(() => {
       setProgress((current) => {
         if (current >= 100) {
           clearInterval(timer)
-          Promise.resolve(onUpload(file))
-            .catch((uploadError) =>
-              setError(
-                uploadError?.response?.data?.detail ??
-                  'Upload failed. Check that the backend is running.',
-              ),
-            )
-            .finally(() => setTimeout(() => setProgress(0), 700))
           return 100
         }
         return current + 22
       })
     }, 220)
+
+    const uploadAfterProgress = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1100))
+      try {
+        await onUpload(file)
+      } catch (uploadError) {
+        setError(
+          uploadError?.response?.data?.detail ??
+            'Upload failed. Check that the backend is running.',
+        )
+      } finally {
+        clearInterval(timer)
+        setProgress(100)
+        setTimeout(() => {
+          setProgress(0)
+          setIsUploading(false)
+          uploadingRef.current = false
+          if (inputRef.current) {
+            inputRef.current.value = ''
+          }
+        }, 700)
+      }
+    }
+
+    uploadAfterProgress()
   }
 
   return (
@@ -46,11 +69,14 @@ function FileUpload({ onUpload }) {
           handleFiles(event.dataTransfer.files)
         }}
         type="button"
+        disabled={isUploading}
       >
         <span className="grid h-10 w-10 place-items-center rounded-full bg-neutral-950 text-white">
           <UploadCloud className="h-5 w-5" />
         </span>
-        <span className="mt-3 font-semibold text-neutral-950">Click to upload or drag a PDF</span>
+        <span className="mt-3 font-semibold text-neutral-950">
+          {isUploading ? 'Uploading PDF...' : 'Click to upload or drag a PDF'}
+        </span>
         <span className="mt-1 text-sm text-neutral-500">PDF only. Ask questions after upload.</span>
       </button>
       <input
