@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
@@ -15,6 +15,7 @@ import {
 } from './services/api'
 
 function App() {
+  const navigate = useNavigate()
   const [documents, setDocuments] = useState([])
   const [activeDocumentId, setActiveDocumentId] = useState()
   const [apiStatus, setApiStatus] = useState('checking')
@@ -71,13 +72,17 @@ function App() {
 
   const addDocument = async (file, onProgress) => {
     setError('')
-    const document = await uploadDocument(file, onProgress)
+    let document = await uploadDocument(file, onProgress)
+    onProgress?.(100)
     setDocuments((current) => [document, ...current])
     setActiveDocumentId(document.id)
     if (document.status === 'Processing') {
-      await waitForDocumentProcessing(document.id)
+      document = await waitForDocumentProcessing(document.id)
     }
     await refreshDashboard()
+    setActiveDocumentId(document.id)
+    navigate('/chat')
+    return document
   }
 
   const deleteDocument = async (id) => {
@@ -117,6 +122,7 @@ function App() {
                   stats={dashboardStats}
                   onUpload={addDocument}
                   onOpenDocument={openDocument}
+                  onDeleteDocument={deleteDocument}
                 />
               }
             />

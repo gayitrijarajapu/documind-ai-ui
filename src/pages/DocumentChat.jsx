@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   ArrowLeft,
   Calendar,
-  ExternalLink,
   FileJson,
   FileText,
   Info,
@@ -21,12 +20,14 @@ function DocumentChat({ document, onDocumentUpdated, onUpload }) {
   const [extractLoading, setExtractLoading] = useState(false)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [activePanel, setActivePanel] = useState('Preview')
+  const [mobilePanel, setMobilePanel] = useState('chat')
   const [error, setError] = useState('')
 
   useEffect(() => {
     setDetails(document)
     setError('')
     setActivePanel('Preview')
+    setMobilePanel('chat')
   }, [document])
 
   if (!document || !details) {
@@ -80,41 +81,44 @@ function DocumentChat({ document, onDocumentUpdated, onUpload }) {
   }
 
   return (
-    <div className="flex-1 bg-white px-8 py-6">
+    <div className="document-chat-page flex min-h-0 flex-1 flex-col bg-white px-3 py-2">
       {error && (
-        <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="mb-4 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
           {error}
         </div>
       )}
       {!isIndexed && (
-        <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+        <div className="mb-4 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
           {statusMessage}
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_410px]">
-        <main className="min-w-0">
+      <div className="mb-2 flex shrink-0 gap-2 lg:hidden" aria-label="Document workspace">
+        {['chat', 'document'].map(panel => <button key={panel} type="button" aria-pressed={mobilePanel === panel} onClick={() => setMobilePanel(panel)} className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold ${mobilePanel === panel ? 'border-black bg-black text-white' : 'border-neutral-200 bg-white text-black'}`}>{panel === 'chat' ? 'AI Chat' : 'View document'}</button>)}
+      </div>
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+        <main className={`${mobilePanel === 'document' ? 'block' : 'hidden'} min-h-0 min-w-0 overflow-y-auto lg:block lg:pr-1`}>
           <Link
-            className="inline-flex items-center gap-2 text-base font-bold text-slate-500 hover:text-slate-950"
+            className="inline-flex items-center gap-2 text-base font-bold text-neutral-500 hover:text-neutral-950"
             to="/documents"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to documents
           </Link>
 
-          <section className="mt-6">
+          <section className="mt-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
-                <h2 className="truncate text-3xl font-extrabold tracking-tight text-slate-950">
+                <h2 className="truncate text-xl font-extrabold tracking-tight text-neutral-950">
                   {details.fileName}
                 </h2>
-                <div className="mt-4 flex flex-wrap items-center gap-5 text-sm font-bold text-slate-500">
+                <div className="mt-4 flex flex-wrap items-center gap-5 text-sm font-bold text-neutral-500">
                   <MetaItem icon={FileText} label="PDF" />
                   <MetaItem icon={FileJson} label={details.size || '--'} />
                   <MetaItem icon={Info} label={`${details.pages || 1} page${details.pages === 1 ? '' : 's'}`} />
                   <span
                     className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ${
-                      isIndexed ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                      isIndexed ? 'bg-neutral-50 text-neutral-600' : 'bg-neutral-50 text-neutral-600'
                     }`}
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-current" />
@@ -124,21 +128,14 @@ function DocumentChat({ document, onDocumentUpdated, onUpload }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  className="inline-flex items-center gap-3 rounded-xl bg-black px-5 py-3 text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(15,23,42,0.18)]"
-                  type="button"
-                >
-                  Open in new tab
-                  <ExternalLink className="h-4 w-4" />
-                </button>
-                <button className="rounded-xl border border-slate-200 bg-white p-3 text-slate-500 shadow-sm" type="button">
+              <div className="hidden items-center gap-3 lg:flex">
+                <button className="rounded-xl border border-neutral-200 bg-white p-3 text-neutral-500 shadow-sm" type="button">
                   <MoreHorizontal className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <TabButton active={activePanel === 'Preview'} label="Preview" onClick={() => setActivePanel('Preview')} />
               <TabButton
                 active={activePanel === 'Summary'}
@@ -159,7 +156,7 @@ function DocumentChat({ document, onDocumentUpdated, onUpload }) {
             </div>
           </section>
 
-          <section className="mt-6">
+          <section className="mt-4">
             {activePanel === 'Preview' && <PDFViewer document={details} />}
             {activePanel === 'Summary' && <SummaryPanel details={details} loading={summaryLoading} />}
             {activePanel === 'Key Points' && <KeyPointsPanel details={details} />}
@@ -168,7 +165,7 @@ function DocumentChat({ document, onDocumentUpdated, onUpload }) {
           </section>
         </main>
 
-        <aside className="min-w-0">
+        <aside className={`${mobilePanel === 'chat' ? 'block' : 'hidden'} min-h-0 min-w-0 lg:block`}>
           <ChatWindow document={details} disabled={!isIndexed} />
         </aside>
       </div>
@@ -188,8 +185,8 @@ function MetaItem({ icon: Icon, label }) {
 function TabButton({ active, disabled, icon: Icon, label, onClick }) {
   return (
     <button
-      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-extrabold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
-        active ? 'bg-black text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-extrabold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        active ? 'bg-black text-white' : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100'
       }`}
       disabled={disabled}
       onClick={onClick}
@@ -203,9 +200,9 @@ function TabButton({ active, disabled, icon: Icon, label, onClick }) {
 
 function SummaryPanel({ details, loading }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-      <h3 className="text-xl font-extrabold text-slate-950">Summary</h3>
-      <p className="mt-4 text-base font-medium leading-8 text-slate-600">
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_12px_32px_rgba(0,0,0,0.05)]">
+      <h3 className="text-xl font-extrabold text-neutral-950">Summary</h3>
+      <p className="mt-4 text-base font-medium leading-8 text-neutral-600">
         {loading ? 'Generating summary...' : details.summary || 'No summary is available yet.'}
       </p>
     </section>
@@ -214,17 +211,17 @@ function SummaryPanel({ details, loading }) {
 
 function KeyPointsPanel({ details }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-      <h3 className="text-xl font-extrabold text-slate-950">Key Points</h3>
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_12px_32px_rgba(0,0,0,0.05)]">
+      <h3 className="text-xl font-extrabold text-neutral-950">Key Points</h3>
       <div className="mt-4 space-y-3">
         {(details.keyPoints ?? []).length ? (
           details.keyPoints.map((point) => (
-            <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-slate-700" key={point}>
+            <p className="rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700" key={point}>
               {point}
             </p>
           ))
         ) : (
-          <p className="text-sm font-medium text-slate-500">Key points will appear after generating a summary.</p>
+          <p className="text-sm font-medium text-neutral-500">Key points will appear after generating a summary.</p>
         )}
       </div>
     </section>
@@ -234,20 +231,20 @@ function KeyPointsPanel({ details }) {
 function ExtractedInfoPanel({ details, loading }) {
   const entries = Object.entries(details.fields ?? {})
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-      <h3 className="text-xl font-extrabold text-slate-950">Extracted Info</h3>
-      <div className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_12px_32px_rgba(0,0,0,0.05)]">
+      <h3 className="text-xl font-extrabold text-neutral-950">Extracted Info</h3>
+      <div className="mt-4 divide-y divide-neutral-100 rounded-2xl border border-neutral-200">
         {loading ? (
-          <p className="px-4 py-3 text-sm font-medium text-slate-500">Finding important information...</p>
+          <p className="px-4 py-3 text-sm font-medium text-neutral-500">Finding important information...</p>
         ) : entries.length ? (
           entries.map(([key, value]) => (
             <div className="grid gap-3 px-4 py-3 text-sm md:grid-cols-[0.7fr_1fr]" key={key}>
-              <span className="font-bold text-slate-500">{key}</span>
-              <span className="font-semibold text-slate-950">{value}</span>
+              <span className="font-bold text-neutral-500">{key}</span>
+              <span className="font-semibold text-neutral-950">{value}</span>
             </div>
           ))
         ) : (
-          <p className="px-4 py-3 text-sm font-medium text-slate-500">Extracted details will appear here.</p>
+          <p className="px-4 py-3 text-sm font-medium text-neutral-500">Extracted details will appear here.</p>
         )}
       </div>
     </section>
@@ -256,8 +253,8 @@ function ExtractedInfoPanel({ details, loading }) {
 
 function MetadataPanel({ details }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-      <h3 className="text-xl font-extrabold text-slate-950">Metadata</h3>
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_12px_32px_rgba(0,0,0,0.05)]">
+      <h3 className="text-xl font-extrabold text-neutral-950">Metadata</h3>
       <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
         {[
           ['File name', details.fileName],
@@ -267,9 +264,9 @@ function MetadataPanel({ details }) {
           ['Added', details.uploadedAt || '--'],
           ['Category', details.category || 'PDF'],
         ].map(([label, value]) => (
-          <div className="rounded-xl bg-slate-50 p-4" key={label}>
-            <p className="font-bold text-slate-500">{label}</p>
-            <p className="mt-1 font-extrabold text-slate-950">{value}</p>
+          <div className="rounded-xl bg-neutral-50 p-4" key={label}>
+            <p className="font-bold text-neutral-500">{label}</p>
+            <p className="mt-1 font-extrabold text-neutral-950">{value}</p>
           </div>
         ))}
       </div>
