@@ -10,6 +10,7 @@ import {
   fetchDashboardStats,
   fetchDocument,
   fetchDocuments,
+  getApiErrorMessage,
   uploadDocument,
 } from './services/api'
 
@@ -35,6 +36,19 @@ function App() {
     return documentData
   }
 
+  const waitForDocumentProcessing = async (documentId) => {
+    let latestDocument
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      latestDocument = await fetchDocument(documentId)
+      setDocuments((current) =>
+        current.map((item) => (item.id === latestDocument.id ? latestDocument : item)),
+      )
+      if (latestDocument.status !== 'Processing') break
+    }
+    return latestDocument
+  }
+
   useEffect(() => {
     setLoading(true)
     refreshDashboard()
@@ -50,16 +64,19 @@ function App() {
     try {
       const document = await fetchDocument(id)
       setDocuments((current) => current.map((item) => (item.id === id ? document : item)))
-    } catch {
-      setError('Could not load this document. Please try again.')
+    } catch (loadError) {
+      setError(getApiErrorMessage(loadError, 'Could not load this document. Please try again.'))
     }
   }
 
-  const addDocument = async (file) => {
+  const addDocument = async (file, onProgress) => {
     setError('')
-    const document = await uploadDocument(file)
+    const document = await uploadDocument(file, onProgress)
     setDocuments((current) => [document, ...current])
     setActiveDocumentId(document.id)
+    if (document.status === 'Processing') {
+      await waitForDocumentProcessing(document.id)
+    }
     await refreshDashboard()
   }
 
@@ -108,8 +125,10 @@ function App() {
               element={
                 <Documents
                   documents={documents}
+                  activeDocument={activeDocument}
                   activeDocumentId={activeDocument?.id}
                   loading={loading}
+                  onUpload={addDocument}
                   onOpenDocument={openDocument}
                   onDeleteDocument={deleteDocument}
                 />

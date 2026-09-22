@@ -1,8 +1,16 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000',
 })
+
+export function getApiErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
+  const detail = error?.response?.data?.detail
+  if (Array.isArray(detail)) {
+    return detail.map((item) => item.msg).filter(Boolean).join(' ') || fallback
+  }
+  return detail ?? error?.response?.data?.message ?? error?.message ?? fallback
+}
 
 function normalizeDocument(document) {
   return {
@@ -28,10 +36,26 @@ function normalizeSource(source) {
   }
 }
 
-export async function uploadDocument(file) {
+function normalizeChatMessage(message) {
+  return {
+    id: message.id ?? crypto.randomUUID(),
+    role: message.role,
+    content: message.content,
+    sources: (message.sources ?? []).map(normalizeSource),
+    createdAt: message.createdAt ?? message.created_at ?? 'Now',
+  }
+}
+
+export async function uploadDocument(file, onProgress) {
   const formData = new FormData()
   formData.append('file', file)
-  const response = await api.post('/api/documents/upload', formData)
+  const response = await api.post('/api/documents/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (event) => {
+      if (!event.total || !onProgress) return
+      onProgress(Math.round((event.loaded * 100) / event.total))
+    },
+  })
   return normalizeDocument(response.data)
 }
 
@@ -60,6 +84,11 @@ export async function askDocument(documentId, question, sessionId) {
     session_id: response.data.session_id,
     sources: (response.data.sources ?? []).map(normalizeSource),
   }
+}
+
+export async function fetchChatHistory(sessionId) {
+  const response = await api.get(`/api/chat/${sessionId}`)
+  return response.data.map(normalizeChatMessage)
 }
 
 export async function summarizeDocument(documentId) {

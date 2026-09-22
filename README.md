@@ -45,7 +45,7 @@ http://127.0.0.1:8000
 You can override this with:
 
 ```bash
-VITE_API_URL=http://127.0.0.1:8000
+VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
 If Vite starts on `http://localhost:5174`, the backend already allows that origin.

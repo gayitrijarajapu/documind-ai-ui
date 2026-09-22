@@ -21,28 +21,15 @@ function FileUpload({ onUpload }) {
     setError('')
     setIsUploading(true)
     uploadingRef.current = true
-    setProgress(18)
-    const timer = setInterval(() => {
-      setProgress((current) => {
-        if (current >= 100) {
-          clearInterval(timer)
-          return 100
-        }
-        return current + 22
-      })
-    }, 220)
+    setProgress(5)
 
     const uploadAfterProgress = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1100))
       try {
-        await onUpload(file)
+        await onUpload(file, (uploadProgress) => setProgress(Math.max(uploadProgress, 5)))
       } catch (uploadError) {
-        setError(
-          uploadError?.response?.data?.detail ??
-            'Upload failed. Check that the backend is running.',
-        )
+        const detail = uploadError?.response?.data?.detail
+        setError(typeof detail === 'string' ? detail : 'Upload failed. Check that the backend is running.')
       } finally {
-        clearInterval(timer)
         setProgress(100)
         setTimeout(() => {
           setProgress(0)
@@ -59,9 +46,9 @@ function FileUpload({ onUpload }) {
   }
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-4">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
       <button
-        className="flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white px-4 py-6 text-center hover:bg-neutral-50"
+        className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center hover:bg-slate-50 disabled:cursor-not-allowed"
         onClick={() => inputRef.current?.click()}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
@@ -71,13 +58,19 @@ function FileUpload({ onUpload }) {
         type="button"
         disabled={isUploading}
       >
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-neutral-950 text-white">
-          <UploadCloud className="h-5 w-5" />
+        <span className="grid h-14 w-14 place-items-center rounded-full text-slate-950">
+          <UploadCloud className="h-12 w-12 stroke-[2.2]" />
         </span>
-        <span className="mt-3 font-semibold text-neutral-950">
+        <span className="mt-4 text-lg font-extrabold text-slate-950">
           {isUploading ? 'Uploading PDF...' : 'Click to upload or drag a PDF'}
         </span>
-        <span className="mt-1 text-sm text-neutral-500">PDF only. Ask questions after upload.</span>
+        <span className="mt-2 text-base font-medium text-slate-500">
+          PDF only. Ask questions after upload.
+        </span>
+        <span className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-base font-extrabold text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]">
+          <FileUp className="h-5 w-5" />
+          Upload PDF
+        </span>
       </button>
       <input
         accept="application/pdf"
@@ -88,19 +81,19 @@ function FileUpload({ onUpload }) {
       />
       {progress > 0 && (
         <div className="mt-4">
-          <div className="flex items-center justify-between text-xs font-medium text-neutral-500">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
             <span className="flex items-center gap-1">
               <FileUp className="h-3.5 w-3.5" />
-              Processing
+              {progress >= 100 ? 'Processing' : 'Uploading'}
             </span>
             <span>{progress}%</span>
           </div>
-          <div className="mt-2 h-2 rounded-full bg-neutral-100">
-            <div className="h-2 rounded-full bg-neutral-950" style={{ width: `${progress}%` }} />
+          <div className="mt-2 h-2 rounded-full bg-blue-50">
+            <div className="h-2 rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
-      {error && <p className="mt-3 text-sm font-medium text-neutral-950">{error}</p>}
+      {error && <p className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
     </section>
   )
 }

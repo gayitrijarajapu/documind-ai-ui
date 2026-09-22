@@ -1,37 +1,53 @@
 import { FileText, PanelLeft, Search } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 
 function Navbar({ documentsCount, apiStatus }) {
+  const location = useLocation()
+  const pageTitle = location.pathname.startsWith('/chat')
+    ? 'AI Chat'
+    : location.pathname.startsWith('/documents')
+      ? 'Documents'
+      : ''
   const statusLabel =
-    apiStatus === 'connected' ? 'FastAPI connected' : apiStatus === 'checking' ? 'Connecting' : 'Demo data'
+    apiStatus === 'connected' ? 'FastAPI connected' : apiStatus === 'checking' ? 'Connecting' : 'Backend offline'
 
   return (
-    <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white px-4 py-2.5">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-8 py-4">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <div className="flex items-center gap-4">
           <button
-            className="rounded-lg border border-neutral-200 p-2 text-neutral-600 hover:bg-neutral-50"
+            className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm hover:bg-slate-50"
             title="Toggle sidebar"
             type="button"
           >
-            <PanelLeft className="h-4 w-4" />
+            <PanelLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-base font-semibold text-neutral-950">Dashboard</h1>
+          {pageTitle && <h1 className="text-xl font-extrabold text-slate-950">{pageTitle}</h1>}
         </div>
-        <div className="hidden w-[300px] items-center rounded-xl border border-neutral-200 bg-white px-3 py-1.5 md:flex">
-          <Search className="h-4 w-4 text-neutral-400" />
+        <div className="hidden w-[410px] items-center rounded-xl border border-blue-100 bg-slate-50 px-4 py-2.5 shadow-[0_4px_14px_rgba(37,99,235,0.08)] md:flex">
+          <Search className="h-5 w-5 text-slate-500" />
           <input
-            className="ml-2 w-full bg-transparent text-sm outline-none placeholder:text-neutral-400"
+            className="ml-3 w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
             placeholder="Search documents..."
           />
+          <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-bold text-slate-400">
+            ⌘ K
+          </span>
         </div>
         <div className="flex items-center justify-end gap-2">
-          <div className="hidden items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-black" />
+          <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm sm:flex">
+            <span className={`h-2.5 w-2.5 rounded-full ${apiStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-400'}`} />
             {statusLabel}
           </div>
-          <div className="hidden items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 sm:flex">
-            <FileText className="h-4 w-4 text-neutral-950" />
+          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm sm:flex">
+            <FileText className="h-5 w-5 text-slate-700" />
             {documentsCount} docs
+          </div>
+          <div className="hidden items-center gap-3 pl-4 xl:flex">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-700 text-lg font-bold text-white shadow-sm">
+              S
+            </span>
+            <span className="text-sm font-bold text-slate-950">Sasi Tamada</span>
           </div>
         </div>
       </div>
