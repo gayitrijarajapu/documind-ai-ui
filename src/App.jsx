@@ -12,6 +12,7 @@ import {
   fetchDocuments,
   getApiErrorMessage,
   uploadDocument,
+  API_BASE_URL,
 } from './services/api'
 
 function App() {
@@ -55,7 +56,7 @@ function App() {
     refreshDashboard()
       .catch(() => {
         setApiStatus('error')
-        setError('Could not connect to FastAPI at http://127.0.0.1:8000.')
+        setError(`Could not connect to FastAPI at ${API_BASE_URL}.`)
       })
       .finally(() => setLoading(false))
   }, [])
